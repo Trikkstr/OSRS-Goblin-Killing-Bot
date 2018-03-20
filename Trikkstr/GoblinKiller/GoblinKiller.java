@@ -11,7 +11,7 @@ import java.util.List;
 
         name="Goblin Killer",
         description = "Kills Goblins and Loots them",
-        properties = "client=4"
+        properties = "client=4; topic=; author=Trikkstr;"
 )
 
 public class GoblinKiller extends PollingScript<ClientContext>
