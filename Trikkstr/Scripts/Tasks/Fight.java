@@ -19,11 +19,6 @@ public class Fight extends Task
 
     private final Walker walker = new Walker(ctx);
 
-  //  private final boolean bankLogic = ctx.inventory.select().id(FOOD).count() < 1 && !ctx.players.local().inCombat()
-          //  && ((ctx.inventory.select().id(995).count(true) > 29 && ctx.players.local().tile().x() < 3268)
-         //   || ctx.inventory.select().id(995).count(true) < 10);
-
-
     Component inventory = ctx.widgets.widget(161).component(61);
 
     public Fight(ClientContext ctx)
@@ -140,7 +135,6 @@ public class Fight extends Task
     public void pickup()
     {
         GroundItem loot = getLoot();
-                //ctx.groundItems.select().name(Pattern.compile("(.*rune)|(Coins)|(.*bolts)")).nearest().poll();
 
         final int startingWealth = ctx.inventory.select().name(Pattern.compile("(.*rune)|(Coins)|(.*bolts)")).count(true);
 
@@ -181,6 +175,7 @@ public class Fight extends Task
 
         goblin.interact("Attack", "Goblin");
 
+        //after initiating an attack, wait until you or the target are in combat
         Condition.wait(new Callable<Boolean>()
         {
             @Override
@@ -191,6 +186,7 @@ public class Fight extends Task
             }
         }, 500, 10);
 
+        //if one of the the two was in combat, and it was not you then you can continue
         Condition.wait(new Callable<Boolean>()
         {
             @Override
