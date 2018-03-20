@@ -1,5 +1,7 @@
-package Trikkstr.GoblinKiller;
+package Trikkstr.Scripts.GoblinKiller;
 
+import Trikkstr.Scripts.Tasks.Bank;
+import Trikkstr.Scripts.Tasks.Fight;
 import org.powerbot.script.rt4.*;
 import org.powerbot.script.PollingScript;
 import org.powerbot.script.Script;
@@ -11,7 +13,7 @@ import java.util.List;
 
         name="Goblin Killer",
         description = "Kills Goblins and Loots them",
-        properties = "client=4; topic=; author=Trikkstr;"
+        properties = "client=4; author=Trikkstr; topic=1343746;"
 )
 
 public class GoblinKiller extends PollingScript<ClientContext>
@@ -31,7 +33,9 @@ public class GoblinKiller extends PollingScript<ClientContext>
         startTime = System.currentTimeMillis();
         System.out.println("Starting.");
 
+        taskList.add(new Bank(ctx));
         taskList.add(new Fight(ctx));
+
     }
 
     @Override
@@ -65,6 +69,5 @@ public class GoblinKiller extends PollingScript<ClientContext>
         }
 
         pollCount += 1;
-        System.out.printf("Poll Count: %d\n", pollCount);
     }
 }

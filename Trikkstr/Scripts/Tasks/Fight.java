@@ -1,5 +1,7 @@
-package Trikkstr.GoblinKiller;
+package Trikkstr.Scripts.Tasks;
 
+import Trikkstr.Scripts.GoblinKiller.CONSTANTS;
+import Trikkstr.Scripts.GoblinKiller.Task;
 import org.powerbot.script.Condition;
 import org.powerbot.script.Filter;
 import org.powerbot.script.rt4.*;
@@ -14,6 +16,8 @@ public class Fight extends Task
     final static int FOOD[] = { 315, 1971, 2309 };
 
     final static int HUT_VALUES[] = {3243, 3244, 3245, 3246, 3247, 3248};
+
+    private final Walker walker = new Walker(ctx);
 
     Component inventory = ctx.widgets.widget(161).component(61);
 
@@ -32,17 +36,51 @@ public class Fight extends Task
     public void execute()
     {
         System.out.printf("Executing Fight.\n");
+        System.out.printf("Health: %d\n", ctx.combat.health());
+
+        //IF YOU ARE NOT PAST THE GATE THEN WALK THE PATH, THEN OPEN THE GATE
+
+        while(ctx.players.local().tile().x() > 3267)
+        {
+            walker.walkPath(CONSTANTS.AK_BANK_TO_GOBLINS);
+
+            Condition.wait(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return ctx.players.local().inCombat();
+                }
+            }, 1000, 1);
+
+            //if close to the gate and not already on the other side, then pay the toll
+            if(ctx.objects.select().id(2882).poll().tile().distanceTo(ctx.players.local()) < 8
+                    && ctx.players.local().tile().x() > 3267)
+            {
+                System.out.printf("Opening Al-Kharid Gate\n");
+                if (!ctx.objects.select().id(2882).poll().inViewport())
+                    ctx.camera.turnTo(ctx.objects.select().id(2882).poll());
+
+                ctx.objects.select().id(2882).poll().interact("Pay-toll(10gp)", "Gate");
+
+                Condition.wait(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return ctx.players.local().tile().x() < 3268;
+                    }
+                }, 500, 6);
+            }
+        }
 
         if(bonesInInventory() && !ctx.players.local().inCombat())
             dropBones();
 
-        while(lootNearby() && !ctx.players.local().inCombat())
+
+        if(lootNearby() && !ctx.players.local().inCombat())
         {
             System.out.printf("Looting.\n");
             pickup();
         }
 
-        if(hasFood())
+        if(hasFood() || ctx.combat.health() >= 10)
         {
             System.out.printf(("Has Food: True\n"));
 
@@ -82,18 +120,31 @@ public class Fight extends Task
     public boolean lootNearby()
     {
         GroundItem loot = ctx.groundItems.select().name(Pattern.compile("(.*rune)|(Coins)|(.*bolts)")).nearest().poll();
-        return(loot.tile().distanceTo(ctx.players.local().tile()) <= 4);
+
+        if(ctx.inventory.select().id(FOOD).count() > 0)
+        {
+            return(loot.tile().distanceTo(ctx.players.local().tile()) <= 4);
+        }
+        else
+        {
+            return(loot.tile().distanceTo(ctx.players.local().tile()) <= 18);
+        }
+
     }
 
     public void pickup()
     {
-        GroundItem loot = ctx.groundItems.select().name(Pattern.compile("(.*rune)|(Coins)|(.*bolts)")).nearest().poll();
+        GroundItem loot = getLoot();
 
         final int startingWealth = ctx.inventory.select().name(Pattern.compile("(.*rune)|(Coins)|(.*bolts)")).count(true);
 
         if(ctx.inventory.select().id(loot).count() > 0 || ctx.inventory.count() < 28)
         {
             ctx.camera.turnTo(loot);
+
+            if(!loot.inViewport())
+                ctx.movement.step(loot);
+
             loot.interact("Take");
         }
 
@@ -115,20 +166,36 @@ public class Fight extends Task
 
         final Npc goblin = getGoblin();
 
-        if(!goblin.inViewport());
-        ctx.camera.turnTo(goblin);
+        if(!goblin.inViewport())
+        {
+            ctx.camera.turnTo(goblin);
+            ctx.movement.step(goblin);
+        }
+
 
         goblin.interact("Attack", "Goblin");
 
+        //after initiating an attack, wait until you or the target are in combat
         Condition.wait(new Callable<Boolean>()
         {
             @Override
             public Boolean call() throws Exception
             {
 
-                return ctx.players.local().inCombat();
+                return ctx.players.local().inCombat() || goblin.inCombat();
             }
         }, 500, 10);
+
+        //if one of the the two was in combat, and it was not you then you can continue
+        Condition.wait(new Callable<Boolean>()
+        {
+            @Override
+            public Boolean call() throws Exception
+            {
+
+                return !ctx.players.local().inCombat();
+            }
+        }, 500, 6);
     }
 
     public void heal()
@@ -162,7 +229,7 @@ public class Fight extends Task
             }
 
             final int startAmountInventory = ctx.inventory.select().count();
-            bones.interact("Drop", "Bones");
+            bones.interact("Bury", "Bones");
 
             Condition.wait(new Callable<Boolean>()
             {
@@ -206,6 +273,40 @@ public class Fight extends Task
             {
                 int count = 0;
                 int y = npc.tile().y();
+                for(int i = 0;  i < HUT_VALUES.length; i++ )
+                {
+                    if(y == HUT_VALUES[i])
+                        count += 1;
+                }
+                return count == 0;
+            }
+        }).nearest().poll();
+    }
+
+    public GroundItem getLoot()
+    {
+        return ctx.groundItems.select().name(Pattern.compile("(.*rune)|(Coins)|(.*bolts)")).select(new Filter<GroundItem>() {
+            @Override
+            public boolean accept(GroundItem item)
+            {
+                boolean hit = false;
+                int x = item.tile().x();
+                int y = item.tile().y();
+                for(int i = 0;  i < HUT_VALUES.length; i++ )
+                {
+                    if(x == HUT_VALUES[i])
+                        for(int j = 0; j < HUT_VALUES.length; j++)
+                            if(y == HUT_VALUES[j])
+                                hit = true;
+                }
+                return hit == false;
+            }
+        }).select(new Filter<GroundItem>() {
+            @Override
+            public boolean accept(GroundItem item)
+            {
+                int count = 0;
+                int y = item.tile().y();
                 for(int i = 0;  i < HUT_VALUES.length; i++ )
                 {
                     if(y == HUT_VALUES[i])

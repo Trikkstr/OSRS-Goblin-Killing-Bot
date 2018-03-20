@@ -1,4 +1,4 @@
-package Trikkstr.GoblinKiller;
+package Trikkstr.Scripts.GoblinKiller;
 
 import org.powerbot.script.rt4.ClientAccessor;
 import org.powerbot.script.rt4.ClientContext;

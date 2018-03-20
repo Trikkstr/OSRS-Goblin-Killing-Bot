@@ -1,9 +1,11 @@
 # OSRS-Goblin-Killing-Bot
-Kills goblins and picks up loot. 
-Designed for use on the goblins between Lumbridge and Al-Kharid.
+Kills goblins between Lumbridge and Al-Kharid and picks up stackable loot. 
+The bot will bank its items once it runs out of food and has 30 coins for tolls and food.
+If there are no Kebabs in your bank, the bot will purchase up to 10 Kebabs before returning to kill goblins.
 
-As a safety mechanism the bot will not attack if there is no food in its inventory but the bot will continue to loot items.
+If you already have kebabs, shrimps, or bread in your bank then the bot will use those instead of buying kebabs.
 
-Have one or more of these in your inventory before you start: Shrimps, Bread, Kebab
+As a safety mechanism the bot will not initiate combat unless it has at least one kebab or at least 10hp.
 
-Just start the script next to the goblins once you are ready.
+Start the script anywhere between the Al-Kharid bank and the goblins in front of the Al-Kharid toll-gate.
+
