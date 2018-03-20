@@ -118,6 +118,8 @@ public class Bank extends Task
                 System.out.printf("Not enough supplies: Need at least 10 coins and 1 kebab OR just 11 coins.\n");
                 ctx.controller.stop();
             }
+            else
+                ;
 
             ctx.bank.withdraw(995, 10);
 
